@@ -3,8 +3,7 @@ package com.example.criminalintent.fragment
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.Intent.ACTION_SEND
-import android.content.Intent.createChooser
+import android.content.Intent.*
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
@@ -16,6 +15,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.*
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
@@ -25,6 +25,7 @@ import com.example.criminalintent.fragment.DatePickerFragment.Companion.EXTRA_DA
 import com.example.criminalintent.fragment.TimerPickerFragment.Companion.EXTRA_TIME
 import com.example.criminalintent.model.Crime
 import com.example.criminalintent.model.CrimeLab
+import com.example.criminalintent.utils.getScaledBitmap
 import kotlinx.android.synthetic.main.fragment_crime.*
 import kotlinx.android.synthetic.main.fragment_crime.view.*
 import java.io.File
@@ -50,6 +51,8 @@ class CrimeFragment : Fragment() {
     private lateinit var timeButton:Button
     private lateinit var suspectButton:Button
 
+    private lateinit var mPhotoView:ImageView
+
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd E a", Locale.CHINA)
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.CHINA)
 
@@ -68,6 +71,7 @@ class CrimeFragment : Fragment() {
         dataButton = view.crime_data
         timeButton = view.crime_time
         suspectButton = view.crime_suspect
+        mPhotoView = view.crime_photo
 
         //fragment中的资源ID必须使用视图(View)来引用，不然会报错
         view.crime_title.setText(crime.mTitle)
@@ -154,11 +158,13 @@ class CrimeFragment : Fragment() {
 
             for (ac in cameraActivities){
                 activity!!.grantUriPermission(ac.activityInfo.packageName,
-                    uri,Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    uri, FLAG_GRANT_WRITE_URI_PERMISSION
+                )
             }
             startActivityForResult(captureImage, REQUEST_PHOTO)
         }
 
+        updatePhotoView()
         return view
     }
 
@@ -185,6 +191,15 @@ class CrimeFragment : Fragment() {
         }
 
         return getString(R.string.crime_report, crime.mTitle, dateString, solvedString, suspect)
+    }
+
+    private fun updatePhotoView(){
+        if (!mPhotoFile.exists()){
+            mPhotoView.setImageDrawable(null)
+        }else{
+            val bitmap = getScaledBitmap(mPhotoFile.path, context as Activity)
+            mPhotoView.setImageBitmap(bitmap)
+        }
     }
 
     companion object{
@@ -269,6 +284,10 @@ class CrimeFragment : Fragment() {
                 crime.mSuspect = suspect
                 suspectButton.text = crime.mSuspect
             }
+        }else if(requestCode == REQUEST_PHOTO){
+            val uri:Uri = FileProvider.getUriForFile(activity!!,"com.example.criminalintent.fileprovider",mPhotoFile)
+            activity!!.revokeUriPermission(uri, FLAG_GRANT_WRITE_URI_PERMISSION)
+            updatePhotoView()
         }
     }
 }
