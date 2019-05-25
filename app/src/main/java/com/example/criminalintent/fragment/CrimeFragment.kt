@@ -118,8 +118,8 @@ class CrimeFragment : Fragment() {
         view.crime_report.setOnClickListener {
             var i = Intent(ACTION_SEND)
             i.type = "text/plain"
-            i.putExtra(Intent.EXTRA_TEXT,getCrimeReport())
-            i.putExtra(Intent.EXTRA_SUBJECT,getString(R.string.crime_report_subject))
+            i.putExtra(EXTRA_TEXT,getCrimeReport())
+            i.putExtra(EXTRA_SUBJECT,getString(R.string.crime_report_subject))
             i = createChooser(i,getString(R.string.send_report))
             startActivity(i)
         }
@@ -144,8 +144,7 @@ class CrimeFragment : Fragment() {
 
         //触发拍照
         val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val canTakePhoto:Boolean = mPhotoFile != null &&
-                captureImage.resolveActivity(packageManager) != null
+        val canTakePhoto:Boolean = captureImage.resolveActivity(packageManager) != null
 
         view.crime_camera.isEnabled = canTakePhoto
         view.crime_camera.setOnClickListener {
@@ -158,13 +157,20 @@ class CrimeFragment : Fragment() {
 
             for (ac in cameraActivities){
                 activity!!.grantUriPermission(ac.activityInfo.packageName,
-                    uri, FLAG_GRANT_WRITE_URI_PERMISSION
-                )
+                    uri,FLAG_GRANT_WRITE_URI_PERMISSION)
             }
             startActivityForResult(captureImage, REQUEST_PHOTO)
         }
 
         updatePhotoView()
+
+        mPhotoView.setOnClickListener {
+            val imageFragment = ImageFragment.newInstance(mPhotoFile.path)
+            imageFragment.setTargetFragment(this@CrimeFragment, DISPLAY_IMAGE)
+            if (manager != null) {
+                imageFragment.show(manager, DIALOG_IMAGE)
+            }
+        }
         return view
     }
 
@@ -206,6 +212,8 @@ class CrimeFragment : Fragment() {
         const val ARG_CRIME_ID = "crime_id"
         const val DIALOG_DATE = "DialogDate"
         const val DIALOG_TIME = "DialogTime"
+        const val DIALOG_IMAGE = "dialogImage"
+        const val DISPLAY_IMAGE = 4
         const val REQUEST_DATE = 0
         const val REQUEST_TIME = 1
         const val REQUEST_CONTACT = 2
